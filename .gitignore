@@ -1,0 +1,10 @@
+ailsaGEO/*
+data/*
+microglia/*
+models/*
+paper/*
+plots/*
+
+*.log
+*.err
+*.rdat
