@@ -2,9 +2,11 @@ ailsaGEO/*
 data/*
 microglia/*
 models/*
-paper/*
+paper/models/*
+paper/plots/*
 plots/*
 
 *.log
 *.err
 *.rdat
+*.csv
