@@ -2,10 +2,14 @@
 ##
 ## Title: Test SATB2+ SATB2- model on fetal data
 ##
-## Purpose of script: Test both of the models trained in the fetalModelTraining.r script on the bulk ## data to see which one performe best (lowest CETYGO score and 'sensible' predictions)
+## Purpose of script: Test models trained in 1.fetalModelTraining.r script on 
+## the bulk and cell line data to see which one performs best 
+## (lowest CETYGO score and 'sensible' predictions)
 ## 
-## allFetalSatb2Model is all the Sat2b+ and Satb2- fetal samples available (79 samples)
-## weeks20Satb2Model is restricted to just samples with age < 20 weeks (70 samples)
+## allFetalSatb2Modelx is all the Sat2b+ and Satb2- fetal samples available 
+## (79 samples)
+## weeks20Satb2Model is restricted to just samples with age < 20 weeks 
+## (70 samples)
 ## 
 ##
 ## Author: Emma Walker
@@ -21,7 +25,40 @@
 
 projDir <- "/lustre/projects/Research_Project-MRC190311/DNAm/cellLinePredictionCETGYO/paper/"
 
-bulkData <- "/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/Bulk/fetalBulk_EX3_23pcw_n91.rdat"
+bulkData <- "/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/Bulk/2_normalised/fetalBulk_EX3_23pcw_n91.rdat"
+
+#----------------------------------------------------------------------#
+# Define Function for CETYGO score/proportion ~ Age plots
+#----------------------------------------------------------------------#
+
+plotCETYGOage <- function(model, title){
+  
+  modelOutput <- model[[1]]
+  modelOutput$Basename <- row.names(modelOutput)
+  
+  plotdf <- left_join(modelOutput, pheno %>% dplyr::select(Basename, PCW))
+  dfmelt <-reshape2::melt(plotdf %>% dplyr::select(-c(CETYGO, nCGmissing)), id.vars = c("Basename", "PCW"))
+  
+  p1 <- ggplot(plotdf, aes(x=PCW, y=CETYGO)) + 
+    geom_point()+
+    geom_hline(yintercept=0.07, linetype="dashed", color = "red")+
+    ggtitle(title)
+  
+  p2 <- ggplot(dfmelt, aes(x=PCW, y=value, colour=variable)) + 
+    geom_point()+
+    ggtitle(title)+
+    geom_smooth(se=FALSE)+
+    ylab("Proportion")+
+    ylim(-2,2.1)+
+    geom_hline(yintercept=0, linetype="dashed")+
+    geom_hline(yintercept=1, linetype="dashed")
+    
+    
+    
+  
+  returnList <- list(p1, p2)
+}
+
 
 #----------------------------------------------------------------------#
 # SET UP
@@ -33,7 +70,8 @@ library(ggplot2)
 setwd(projDir)
 
 # load models
-load("models/allFetalSatb2.rdat")
+load("models/allFetalSatb2Auto.rdat")
+load("models/allFetalSatb2Any.rdat")
 load("models/weeksTo20FetalSatb2.rdat")
 load("models/weeks16to20FetalSatb2.rdat")
 
@@ -51,18 +89,55 @@ source("scripts/Function_fetalModelPredictAndPlot.r")
 load(bulkData)
 
 #----------------------------------------------------------------------#
-# FETAL BULK DATA
+# FETAL BULK DATA - all fetal samples models AUTO probeSelect
+#----------------------------------------------------------------------#
+
+allSamplesModelAuto <- fetalModelTest(betas, "AllSamplesModelAuto", allFetalSatb2modelAuto)
+
+allSamplesModelAutoByAge <- plotCETYGOage(allSamplesModelAuto, "AllSamplesModelAuto")
+
+# view/save plots
+pdf("plots/allSamplesModelAuto.pdf")
+print(allSamplesModelAuto[[2]])
+print(allSamplesModelAuto[[3]])
+print(allSamplesModelAutoByAge[[1]])
+print(allSamplesModelAutoByAge[[2]])
+dev.off()
+
+
+# view stats for model probes
+autoStats <- allFetalSatb2modelAuto[[2]][rownames(allFetalSatb2modelAuto[[1]]),]
+
+head(autoStats[order(autoStats$Fstat, decreasing = TRUE),])
+tail(autoStats[order(autoStats$Fstat, decreasing = TRUE),])
+
+#----------------------------------------------------------------------#
+# FETAL BULK DATA - all fetal samples models ANY probeSelect
 #----------------------------------------------------------------------#
 
 
-## run predictor trained on all available satb2 fetal samples
-allSamplesModel <- fetalModelTest(betas, "AllSamplesModel", allFetalSatb2model)
+## Any probeSelect
+allSamplesModelAny <- fetalModelTest(betas, "AllSamplesModelAny", allFetalSatb2modelAny)
 
-pdf("plots/allSamplesModel.pdf")
-print(allSamplesModel[[2]])
-print(allSamplesModel[[3]])
+allSamplesModelAnyByAge <- plotCETYGOage(allSamplesModelAny, "AllSamplesModelAny")
+
+pdf("plots/allSamplesModelAny.pdf")
+print(allSamplesModelAny[[2]])
+print(allSamplesModelAny[[3]])
+print(allSamplesModelAnyByAge[[1]])
+print(allSamplesModelAnyByAge[[2]])
 dev.off()
 
+
+# view stats
+anyStats <- allFetalSatb2modelAny[[2]][rownames(allFetalSatb2modelAny[[1]]),]
+
+head(anyStats[order(anyStats$Fstat, decreasing = TRUE),])
+tail(anyStats[order(anyStats$Fstat, decreasing = TRUE),])
+
+#----------------------------------------------------------------------#
+# FETAL BULK DATA - fetal samples < 20 weeks models
+#----------------------------------------------------------------------#
 
 ## run predictor trained on satb2 fetal samples < 20 weeks
 weeks20Model <- fetalModelTest(betas, "weeks20Model", weeks20Satb2Model)
@@ -136,8 +211,9 @@ ggplot(dfmelt, aes(x=PCW, y=value, colour=variable)) +
 
 
 
-
-################################### other datasets
+#----------------------------------------------------------------------#
+# Other datasets
+#----------------------------------------------------------------------#
 
 
 # DRI IPSC
@@ -342,18 +418,4 @@ TNbetas <- betas[,colnames(betas) %in% SampleSheet$Basename[which(SampleSheet$Ce
 TN <- fetalModelTest(TNbetas, "Total Nuclei")
 print(TN[[2]])
 print(TN[[3]])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
