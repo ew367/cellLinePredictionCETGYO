@@ -18,7 +18,7 @@
 
 projDir <- "/lustre/projects/Research_Project-MRC190311/DNAm/cellLinePredictionCETGYO/paper/"
 
-bulkData <- "/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/Bulk/fetalBulk_EX3_23pcw_n91.rdat"
+bulkData <- "/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/Bulk/2_normalised/fetalBulk_EX3_23pcw_n91.rdat"
 
 
 #----------------------------------------------------------------------#
@@ -27,6 +27,7 @@ bulkData <- "/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/Bulk/f
 
 #library(dplyr)
 library(ggplot2)
+library(pheatmap)
 
 setwd(projDir)
 
@@ -48,7 +49,8 @@ pheno$Basename <- as.character(pheno$Basename)
 source("scripts/Function_fetalModelPredictAndPlot.r")
 
 # load models
-load("models/allFetalSatb2.rdat")
+load("models/allFetalSatb2Auto.rdat")
+load("models/allFetalSatb2Any.rdat")
 load("models/weeksTo20FetalSatb2.rdat")
 load("models/weeks16to20FetalSatb2.rdat")
 
@@ -69,6 +71,8 @@ ggplot(pheno, aes(x = M.median, y = U.median, colour = Age.bin))+
 # Look at intensities of samples with high CETYGO score
 #----------------------------------------------------------------------#
 
+#### NOTE!!! this model no longer exists.. it has been replaced by:
+# allFetalSatb2modelAuto
 
 # run predictor trained on all available satb2 fetal samples
 allSamplesModel <- fetalModelTest(betas, "AllSamplesModel", allFetalSatb2model)
@@ -136,6 +140,44 @@ pheno$outliers[pheno$Basename %in% tBasenames] <- TRUE
 # plot densities
 densityPlot(plotBetas, main = "probes in all models", sampGroups = pheno$outliers)
 
+
+#----------------------------------------------------------------------#
+# set up for heat maps using pheatmap 
+# adapted from A. Franklins pheatmapExample.r
+#----------------------------------------------------------------------#
+
+plot_samp <- pheno
+plot_samp$num <- 1:nrow(plot_samp)
+
+# Create annotation matrix
+nCuts <- nlevels(factor(plot_samp$Cell_Type))
+
+annotation_col <- data.frame(CellType=plot_samp$Cell_Type, Age=plot_samp$PCW)
+rownames(annotation_col) <- paste0(plot_samp$num, "_", plot_samp$Age.bin, "_", plot_samp$PCW)
+
+
+#----------------------------------------------------------------------#
+# pheatmap - auto probe select model
+#----------------------------------------------------------------------#
+
+# subset betas
+plot_betas <- betas[row.names(betas) %in% row.names(allFetalSatb2modelAuto[[1]]),]
+colnames(plot_betas) <- paste0(plot_samp$num, "_", plot_samp$Age.bin, "_", plot_samp$PCW)
+
+# Run pheatmap
+pheatmap(plot_betas, annotation_col=annotation_col, show_colnames=TRUE, show_rownames=FALSE, cutree_cols=nCuts, main="Bulk Fetal", angle_col=90,                           filename="plots/bulkAutoProbeSelectPheatmap.pdf", width=20, height=8)
+
+
+#----------------------------------------------------------------------#
+# pheatmap - any probe select model
+#----------------------------------------------------------------------#
+
+# subset betas
+plot_betas <- betas[row.names(betas) %in% row.names(allFetalSatb2modelAny[[1]]),]
+colnames(plot_betas) <- paste0(plot_samp$num, "_", plot_samp$Age.bin, "_", plot_samp$PCW)
+
+# Run pheatmap
+pheatmap(plot_betas, annotation_col=annotation_col, show_colnames=TRUE, show_rownames=FALSE, cutree_cols=nCuts, main="Bulk Fetal", angle_col=90,                           filename="plots/bulkAnyProbeSelectPheatmap.pdf", width=20, height=8)
 
 
 #----------------------------------------------------------------------#
