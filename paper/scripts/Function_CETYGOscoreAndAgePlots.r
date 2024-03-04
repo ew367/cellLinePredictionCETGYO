@@ -14,6 +14,9 @@
 # Define Function for CETYGO score/proportion ~ Age plots
 #----------------------------------------------------------------------#
 
+# model is output from using CETYGO
+# assumes there is a pheno object in the global environment
+
 plotCETYGOage <- function(model, title){
   
   modelOutput <- model[[1]]
