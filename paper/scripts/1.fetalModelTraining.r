@@ -2,10 +2,16 @@
 ##
 ## Title: Train model on SATB2+ SATB2- FACS sorted fetal data
 ##
-## Purpose of script: Create model from all fetal satb2 samples, and one from jsut samples
-## with age WPC < 20 weeks.
+## Purpose of script: Create models from:
 ##
-## Additionally look for patterns in the datasets (PCA clustering histograms etc.)
+## 1. all fetal satb2 samples using probe select "any" and "both"
+## 2. just samples with age WPC < 20 weeks
+## 3. samples age > 16 weeks and < 20 weeks
+## 4. excluding outlier sample from above model
+##
+## Additionally look for patterns in the datasets:
+## - PCA clustering
+## - histograms
 ##
 ## Author: Emma Walker
 ##
@@ -13,7 +19,18 @@
 ## updated from script 19/05/2023
 ##---------------------------------------------------------------------#
 
+#----------------------------------------------------------------------#
+# Notes
+#----------------------------------------------------------------------#
 
+# github CETYGO tutorial:
+
+# https://github.com/ds420/CETYGO/blob/main/vignettes/QuantifyErrorInCellularCompositionEstimate.Rmd
+
+
+# minfi::estimateCellCounts
+
+# https://rdrr.io/bioc/minfi/man/estimateCellCounts.html
 
 #----------------------------------------------------------------------#
 # SET UP
@@ -31,7 +48,9 @@ setwd("/lustre/projects/Research_Project-MRC190311/DNAm/cellLinePredictionCETGYO
 #load("/gpfs/mrc0/projects/Research_Project-MRC190311/DNAm/Fetal/FACS/2_normalised/normalisedBetas_FACS_Fetal.rdat")
 
 
-load("/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/FANS/SFARI_MRC_merged_N_NN.rdat")
+#load("/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/FANS/SFARI_MRC_merged_N_NN.rdat")
+
+load("/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/FANS/2_normalised/SFARI_MRC_merged_N_NN.rdat")
 
 
 # change cell type names to remove special symbols
@@ -40,29 +59,58 @@ SampleSheet$Cell_Type <- gsub("SATB2+", "SATB2pos", SampleSheet$Cell_Type, fixed
 SampleSheet$Cell_Type <- gsub("SATB2-", "SATB2neg", SampleSheet$Cell_Type, fixed = T)
 
 
-# subset to just satb2+ and satb-  fetal samples
+# subset to just satb2+ and satb- fetal samples
 fetal <- SampleSheet[SampleSheet$Phenotype == "Fetal",]
 satb2 <- fetal[fetal$Cell_Type %in% c("SATB2pos", "SATB2neg"),]
 
-
-#----------------------------------------------------------------------#
-# TRAIN MODEL ON ALL SATB2 SAMPLES
-#----------------------------------------------------------------------#
-
-# from github - https://github.com/ds420/CETYGO/blob/main/vignettes/QuantifyErrorInCellularCompositionEstimate.Rmd
-
-# extract betas
+# extract betas for these samples
 satb2Betas <- as.matrix(betas[,satb2$Basename])
 
+# remove objects no longer needed
+rm(list=setdiff(ls(), c("satb2", "satb2Betas")))
 
-# Select the sites to form the basis of the deconvolution.
-allFetalSatb2model <- pickCompProbesMatrix(rawbetas = satb2Betas,
+
+
+#----------------------------------------------------------------------#
+# TRAIN MODEL ON ALL SATB2 SAMPLES 
+#----------------------------------------------------------------------#
+
+# using probeSelect="auto"
+allFetalSatb2modelAuto <- pickCompProbesMatrix(rawbetas = satb2Betas,
                                            cellTypes = unique(satb2$Cell_Type),
                                            cellInd = satb2$Cell_Type,
                                            numProbes = 100,
                                            probeSelect = "auto")
 
-save(allFetalSatb2model, file="models/allFetalSatb2.rdat")
+save(allFetalSatb2modelAuto, file="models/allFetalSatb2Auto.rdat")
+
+
+
+#using probeSelect="any"
+allFetalSatb2modelAny <- pickCompProbesMatrix(rawbetas = satb2Betas,
+                                           cellTypes = unique(satb2$Cell_Type),
+                                           cellInd = satb2$Cell_Type,
+                                           numProbes = 100,
+                                           probeSelect = "any")
+
+save(allFetalSatb2modelAny, file="models/allFetalSatb2Any.rdat")
+
+
+#compare probe lists
+
+auto <- rownames(allFetalSatb2modelAuto[[1]])
+any <- rownames(allFetalSatb2modelAny[[1]])
+
+inBoth <- intersect(auto, any)
+# 100 - presumably hypo/hyper?
+
+
+# plot densities
+
+densityPlot(satb2Betas[rownames(satb2Betas) %in% auto,])
+
+densityPlot(satb2Betas[rownames(satb2Betas) %in% any,])
+
 
 
 #----------------------------------------------------------------------#
