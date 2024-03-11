@@ -2,7 +2,8 @@
 ##
 ## Title: Plot methylation profiles of fetal data coloured by age bins
 ##
-## Purpose: plot bulk data intensities coloured by age bin
+## Purpose: predicted ages using fetal clock and cor actual age
+##        : plot bulk data intensities coloured by age bin
 ##        : plot bulk data intensities coloured by high/low CETYGO
 ##        : methylation density plots all samples model coloured by age bin
 ##        : methylation density plot of 72 probes in all models
@@ -31,6 +32,12 @@ library(pheatmap)
 
 setwd(projDir)
 
+# source function to predict and plot
+source("scripts/Function_fetalModelPredictAndPlot.r")
+
+# source fetalClock
+source("/lustre/projects/Research_Project-MRC190311/references/FetalClock/FetalClockFunction.R")
+
 # load bulk fetal data
 load(bulkData)
 
@@ -45,8 +52,10 @@ pheno$M.median <- as.numeric(as.character(pheno$M.median))
 pheno$U.median <- as.numeric(as.character(pheno$U.median))
 pheno$Basename <- as.character(pheno$Basename)
 
-# source function to predict and plot
-source("scripts/Function_fetalModelPredictAndPlot.r")
+#run fetalClockPredictions
+predage <- FetalClock(betas)
+# identical(row.names(predage), pheno$Basename)
+#TRUE
 
 # load models
 load("models/allFetalSatb2Auto.rdat")
@@ -75,8 +84,8 @@ ggplot(pheno, aes(x = M.median, y = U.median, colour = Age.bin))+
 # allFetalSatb2modelAuto
 
 # run predictor trained on all available satb2 fetal samples
-allSamplesModel <- fetalModelTest(betas, "AllSamplesModel", allFetalSatb2model)
-pred <- allSamplesModel[[1]]
+allSamplesModelAuto <- fetalModelTest(betas, "AllSamplesModel", allFetalSatb2modelAuto)
+pred <- allSamplesModelAuto[[1]]
 
 highCET <- pred[pred$CETYGO > 0.05,]
 
@@ -96,12 +105,12 @@ ggplot(pheno, aes(x = M.median, y = U.median, colour = highCET))+
 #----------------------------------------------------------------------#
 
 # extract beta values for probes in model
-plotBetas <- betas[row.names(betas) %in% row.names(allFetalSatb2model[[1]]),]
+plotBetas <- betas[row.names(betas) %in% row.names(allFetalSatb2modelAuto[[1]]),]
 
 densityPlot(plotBetas, main = "all fetal samples model probes", sampGroups = pheno$Age.bin)
 
 # look at 67 probes that are in all 3 models
-overlapProbes <- intersect(intersect(row.names(allFetalSatb2model[[1]]),
+overlapProbes <- intersect(intersect(row.names(allFetalSatb2modelAuto[[1]]),
                                      row.names(weeks16to20Satb2Model[[1]])),
                                      row.names(weeks20Satb2Model[[1]]))
 
@@ -109,36 +118,64 @@ overlapBetas <- betas[row.names(betas) %in% overlapProbes,]
 
 densityPlot(overlapBetas, main = "72 probes in all models", sampGroups = pheno$Age.bin)
 
+
+#----------------------------------------------------------------------#
+# Methylation density plots - mean of age groups
+#----------------------------------------------------------------------#
+
+
+# auto model
+earlyMeanBetasAuto <- rowMeans(plotBetas[,pheno$Basename[pheno$Age.bin == "Early"]])
+midMeanBetasAuto <- rowMeans(plotBetas[,pheno$Basename[pheno$Age.bin == "Mid"]])
+lateMeanBetasAuto <- rowMeans(plotBetas[,pheno$Basename[pheno$Age.bin == "Late"]])
+
+meanBetasAuto <- cbind(earlyMeanBetasAuto, midMeanBetasAuto, lateMeanBetasAuto)
+
+densityPlot(meanBetasAuto, main = "all fetal samples auto model probes", sampGroups = colnames(meanBetasAuto), legend = F)
+
+
+# any model
+plotBetasAny <- betas[row.names(betas) %in% row.names(allFetalSatb2modelAny[[1]]),]
+
+earlyMeanBetasAny <- rowMeans(plotBetasAny[,pheno$Basename[pheno$Age.bin == "Early"]])
+midMeanBetasAny <- rowMeans(plotBetasAny[,pheno$Basename[pheno$Age.bin == "Mid"]])
+lateMeanBetasAny <- rowMeans(plotBetasAny[,pheno$Basename[pheno$Age.bin == "Late"]])
+
+meanBetasAny <- cbind(earlyMeanBetasAny, midMeanBetasAny, lateMeanBetasAny)
+
+densityPlot(meanBetasAny, main = "all fetal samples any model probes", sampGroups = colnames(meanBetasAny), legend = F)
+
+
 #----------------------------------------------------------------------#
 # heat maps
 #----------------------------------------------------------------------#
 
-colnames(plotBetas) <- paste0(colnames(plotBetas), "_", pheno$Age.bin)
+#colnames(plotBetas) <- paste0(colnames(plotBetas), "_", pheno$Age.bin)
 #heatmap.2(plotBetas)
 
 # plot so can extract samples
-pdf("plots/heatmap.pdf", width=30, height = 20)
-row_clust <- hclust(dist(plotBetas, method = 'euclidean'), method = 'ward.D2')
-out <- heatmap.2(
-  plotBetas,
-  Rowv = as.dendrogram(row_clust))
-dev.off()
+#pdf("plots/heatmap.pdf", width=30, height = 20)
+#row_clust <- hclust(dist(plotBetas, method = 'euclidean'), method = 'ward.D2')
+#out <- heatmap.2(
+ # plotBetas,
+#  Rowv = as.dendrogram(row_clust))
+#dev.off()
 
 # get samples which are in different cluster
-t <-colnames(plotBetas)[out$colInd][20:39]
-tBasenames <- substring(t, 1, 19)
+#t <-colnames(plotBetas)[out$colInd][20:39]
+#tBasenames <- substring(t, 1, 19)
 
 
 # check CETYGO scores of these samples
 
-outliers <- pred[row.names(pred) %in% tBasenames,]
+#outliers <- pred[row.names(pred) %in% tBasenames,]
 
 # add in whether they are in clust or not
-pheno$outliers <- rep(FALSE)
-pheno$outliers[pheno$Basename %in% tBasenames] <- TRUE
+#pheno$outliers <- rep(FALSE)
+#pheno$outliers[pheno$Basename %in% tBasenames] <- TRUE
 
 # plot densities
-densityPlot(plotBetas, main = "probes in all models", sampGroups = pheno$outliers)
+#densityPlot(plotBetas, main = "probes in all models", sampGroups = pheno$outliers)
 
 
 #----------------------------------------------------------------------#
@@ -165,7 +202,11 @@ plot_betas <- betas[row.names(betas) %in% row.names(allFetalSatb2modelAuto[[1]])
 colnames(plot_betas) <- paste0(plot_samp$num, "_", plot_samp$Age.bin, "_", plot_samp$PCW)
 
 # Run pheatmap
-pheatmap(plot_betas, annotation_col=annotation_col, show_colnames=TRUE, show_rownames=FALSE, cutree_cols=nCuts, main="Bulk Fetal", angle_col=90,                           filename="plots/bulkAutoProbeSelectPheatmap.pdf", width=20, height=8)
+resAuto <- pheatmap(plot_betas, annotation_col=annotation_col, show_colnames=TRUE, show_rownames=FALSE, cutree_cols=nCuts, main="Bulk Fetal", angle_col=90,                           filename="plots/bulkAutoProbeSelectPheatmap.pdf", width=20, height=8)
+
+
+resAutoCols <- resAuto$tree_col
+resAutoClust <- resAutoCols$labels[resAutoCols$order][20:38]
 
 
 #----------------------------------------------------------------------#
@@ -177,7 +218,40 @@ plot_betas <- betas[row.names(betas) %in% row.names(allFetalSatb2modelAny[[1]]),
 colnames(plot_betas) <- paste0(plot_samp$num, "_", plot_samp$Age.bin, "_", plot_samp$PCW)
 
 # Run pheatmap
-pheatmap(plot_betas, annotation_col=annotation_col, show_colnames=TRUE, show_rownames=FALSE, cutree_cols=nCuts, main="Bulk Fetal", angle_col=90,                           filename="plots/bulkAnyProbeSelectPheatmap.pdf", width=20, height=8)
+resAny <- pheatmap(plot_betas, annotation_col=annotation_col, show_colnames=TRUE, show_rownames=FALSE, cutree_cols=nCuts, main="Bulk Fetal", angle_col=90,                           filename="plots/bulkAnyProbeSelectPheatmap.pdf", width=20, height=8)
+
+
+resAnyCols <- resAny$tree_col
+resAnyClust <- resAnyCols$labels[resAnyCols$order][42:60]
+
+#setdiff(resAnyClust, resAutoClust)
+#character(0)
+#setdiff(resAutoClust, resAnyClust)
+#character(0)
+
+
+#----------------------------------------------------------------------#
+# Correlate actual and predicted Age
+#----------------------------------------------------------------------#
+
+# colour by age group
+
+ageCorPlotdf <- as.data.frame(cbind(plot_samp$PCW, plot_samp$Age.bin, predage))
+colnames(ageCorPlotdf) <- c("PCW", "AgeBin", "predAge")
+ageCorPlotdf <- ageCorPlotdf %>% mutate(PCW = as.numeric(as.character(PCW)),
+                                        predAge = as.numeric(as.character(predAge)))
+ageCorPlotdf$annotationCol <- paste0(plot_samp$num, "_", plot_samp$Age.bin, "_", plot_samp$PCW)
+
+# add in outlier status (out and any are identical so just need one of them)
+ageCorPlotdf$outlier <- rep(FALSE)
+ageCorPlotdf$outlier[ageCorPlotdf$annotationCol %in% resAutoClust] <- TRUE
+
+# plot age vs pred age coloured by outlier status
+ggplot(ageCorPlotdf, aes(x=PCW, y=predAge, colour=outlier))+
+  geom_point()
+
+
+
 
 
 #----------------------------------------------------------------------#
