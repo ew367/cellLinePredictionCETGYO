@@ -47,16 +47,17 @@ setwd("/lustre/projects/Research_Project-MRC190311/DNAm/cellLinePredictionCETGYO
 # this is the file path from gpfs used in the previous version of the script, which is currently offline
 #load("/gpfs/mrc0/projects/Research_Project-MRC190311/DNAm/Fetal/FACS/2_normalised/normalisedBetas_FACS_Fetal.rdat")
 
-
-#load("/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/FANS/SFARI_MRC_merged_N_NN.rdat")
-
-load("/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/FANS/2_normalised/SFARI_MRC_merged_N_NN.rdat")
-
+#load("/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/FANS/2_normalised/SFARI_MRC_merged_N_NN.rdat")
+load("/lustre/projects/Research_Project-MRC190311/DNAm/Lifecourse1/FANS/2_normalised/normalisedBetas_FACS_Fetal.rdat")
 
 # change cell type names to remove special symbols
 SampleSheet$Cell_Type <- gsub(" ", "", SampleSheet$Cell_Type, fixed = TRUE)
 SampleSheet$Cell_Type <- gsub("SATB2+", "SATB2pos", SampleSheet$Cell_Type, fixed = T)
 SampleSheet$Cell_Type <- gsub("SATB2-", "SATB2neg", SampleSheet$Cell_Type, fixed = T)
+
+
+SampleSheet$Basename <- as.character(SampleSheet$Basename)
+SampleSheet$Age <- as.numeric(as.character(SampleSheet$Age))
 
 
 # subset to just satb2+ and satb- fetal samples
