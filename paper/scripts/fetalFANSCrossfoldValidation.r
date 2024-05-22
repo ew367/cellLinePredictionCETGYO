@@ -48,7 +48,7 @@ setwd(projDir)
 # source function to predict and plot
 source("scripts/Function_fetalModelPredictAndPlot.r")
 
-# source script to relax f stat p.value threshold from 1e-8 to 1e-7
+# source script to relax f stat p.value threshold from 1e-8 to 1e-6
 source("scripts/Function_pickCompProbesMatrixRelaxed.r")
 
 
@@ -98,7 +98,7 @@ table(SampleSheet$Age.bin)
 #set.seed(seed)
 
 # split into early/mid/late
-age <- "Late"
+age <- "Early"
 
 subPheno <- SampleSheet[SampleSheet$Age.bin == age,]
 #subPheno <- subPheno[!subPheno$Basename == "203973690033_R04C01",]
@@ -162,7 +162,7 @@ for(i in 1:length(modelOutput)){
   counter = counter + 1
 }
 
-pdf("plots/modelCeofPvalHistograms.pdf")
+pdf("plots/EarlymodelCeofPvalHistograms.pdf")
 do.call(grid.arrange, c(allPvalPlots, ncol = 4))
 dev.off()
 
@@ -191,6 +191,41 @@ for(i in 1:length(modelOutput)){
 
 
 # not working as not getting a CETGYO score...
+
+
+
+
+
+
+
+# heatmap of probes
+
+# sort by pval and plot most diff 200 probes
+
+check <- modelOutput[[1]]
+df <- check$compTable
+df <- df[order(df$p.value),]
+
+top200 <- df[1:200,]
+
+# subset betas
+plot_betas <- betas[row.names(betas) %in% row.names(top200),]
+colnames(plot_betas) <- paste0(plot_samp$num, "_", plot_samp$Age.bin, "_", plot_samp$PCW)
+
+
+plot_samp <- subPheno
+plot_samp$num <- 1:nrow(plot_samp)
+
+# Create annotation matrix
+nCuts <- nlevels(factor(plot_samp$Cell_Type))
+
+annotation_col <- data.frame(CellType=plot_samp$Cell_Type, Age=plot_samp$Age)
+rownames(annotation_col) <- paste0(plot_samp$num, "_", plot_samp$Age.bin, "_", plot_samp$PCW)
+
+
+# Run pheatmap
+res <- pheatmap(plot_betas, annotation_col=annotation_col, show_colnames=TRUE, show_rownames=FALSE, cutree_cols=nCuts, main="Early Fetal", angle_col=90,                           filename="plots/EarlyFetal200MostDiffProbeSelectPheatmap.pdf", width=20, height=8)
+
 
 
 #----------------------------------------------------------------------#

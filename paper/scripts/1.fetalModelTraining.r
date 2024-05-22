@@ -120,7 +120,7 @@ densityPlot(satb2Betas[rownames(satb2Betas) %in% any,])
 
 # subset to samples < 20 weeks
 weeks20 <- satb2[satb2$Age < 20,]
-weeks20betas <- as.matrix(betas[,weeks20$Basename])
+weeks20betas <- as.matrix(satb2Betas[,weeks20$Basename])
 
 
 # Select the sites to form the basis of the deconvolution.
@@ -144,7 +144,7 @@ save(weeks20Satb2Model, file="models/weeksTo20FetalSatb2.rdat")
 
 # subset to samples < 20 weeks
 weeks16to20 <- satb2[satb2$Age >= 16 & satb2$Age <= 20,]
-weeks16to20betas <- as.matrix(betas[,weeks16to20$Basename])
+weeks16to20betas <- as.matrix(satb2Betas[,weeks16to20$Basename])
 
 
 # Select the sites to form the basis of the deconvolution.
@@ -165,7 +165,7 @@ save(weeks16to20Satb2Model, file="models/weeks16to20FetalSatb2.rdat")
 
 
 weeks16to20 <- weeks16to20[!weeks16to20$Individual_ID == 11947,]
-weeks16to20betas <- as.matrix(betas[,weeks16to20$Basename])
+weeks16to20betas <- as.matrix(satb2Betas[,weeks16to20$Basename])
 
 
 # Select the sites to form the basis of the deconvolution.
@@ -279,7 +279,7 @@ nrow(satb2[satb2$Age >= 16 & satb2$Age <= 20,])
 mid <- satb2[satb2$Age >= 16 & satb2$Age <= 20,]
 # exclude sample 11947 
 mid <- mid[!mid$Individual_ID == 11947,]
-midbetas <- betas[,mid$Basename]
+midbetas <- satb2Betas[,mid$Basename]
 
 # make sure sample order matches in pheno and betas
 print(identical(as.character(mid$Basename), colnames(midbetas)))

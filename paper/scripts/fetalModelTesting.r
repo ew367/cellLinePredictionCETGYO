@@ -112,9 +112,14 @@ tail(anyStats[order(anyStats$Fstat, decreasing = TRUE),])
 ## run predictor trained on satb2 fetal samples < 20 weeks
 weeks20Model <- fetalModelTest(betas, "weeks20Model", weeks20Satb2Model)
 
+weeks20ModelAnyByAge <- plotCETYGOage(weeks20Model, "weeks20Model")
+
+
 pdf("plots/Weeks20Model.pdf")
 print(weeks20Model[[2]])
 print(weeks20Model[[3]])
+print(weeks20ModelAnyByAge[[1]])
+print(weeks20ModelAnyByAge[[2]])
 dev.off() 
 
 

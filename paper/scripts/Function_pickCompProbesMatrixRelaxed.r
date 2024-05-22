@@ -1,6 +1,6 @@
 
 
-# p val threshold is 1e-6
+flexThresh <- 1e-1
 
 pickCompProbesMatrixRelaxed <- function(rawbetas, cellInd, cellTypes = NULL,
                                  numProbes = 50, probeSelect = "both") {
@@ -30,13 +30,13 @@ pickCompProbesMatrixRelaxed <- function(rawbetas, cellInd, cellTypes = NULL,
   
   if (probeSelect == "any") {
     probeList <- lapply(tstatList, function(x) {
-      y <- x[x[, "p.value"] < 1e-6, ]
+      y <- x[x[, "p.value"] < flexThresh, ]
       yAny <- y[order(abs(y[, "dm"]), decreasing = TRUE), ]
       c(rownames(yAny)[seq_len(numProbes * 2)])
     })
   } else {
     probeList <- lapply(tstatList, function(x) {
-      y <- x[x[, "p.value"] < 1e-6, ]
+      y <- x[x[, "p.value"] < flexThresh, ]
       yUp <- y[order(y[, "dm"], decreasing = TRUE), ]
       yDown <- y[order(y[, "dm"], decreasing = FALSE), ]
       c(rownames(yUp)[seq_len(numProbes)], 
@@ -116,13 +116,13 @@ pickCompProbes <- function(mSet, cellTypes = NULL, numProbes = 50,
   
   if (probeSelect == "any") {
     probeList <- lapply(tstatList, function(x) {
-      y <- x[x[, "p.value"] < 1e-6, ]
+      y <- x[x[, "p.value"] < flexThresh, ]
       yAny <- y[order(abs(y[, "dm"]), decreasing = TRUE), ]
       c(rownames(yAny)[seq(numProbes * 2)])
     })
   } else {
     probeList <- lapply(tstatList, function(x) {
-      y <- x[x[, "p.value"] < 1e-6, ]
+      y <- x[x[, "p.value"] < flexThresh, ]
       yUp <- y[order(y[, "dm"], decreasing = TRUE), ]
       yDown <- y[order(y[, "dm"], decreasing = FALSE), ]
       c(
