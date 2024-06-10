@@ -1,6 +1,7 @@
 ##---------------------------------------------------------------------#
 ##
-## Title: Train model on subset of SATB2+ SATB2- FACS sorted fetal data, and test on remaining saples
+## Title: Train model on subset of SATB2+ SATB2- FACS sorted fetal data,
+##        and test on remaining samples
 ##
 ## Purpose of script: divide dataset into training and testing sets.
 ##                    1, Early/late train/ late test
@@ -87,6 +88,8 @@ table(SampleSheet$Age.bin)
 # Early  Late   Mid - fetal only data
 #   19    19    45 
 
+betas <- betas[,SampleSheet$Basename]
+
 #----------------------------------------------------------------------#
 # EARLY SAMPLES CROSS FOLD VALIDATION
 #----------------------------------------------------------------------#
@@ -128,11 +131,13 @@ for(i in 1:(nrow(subPheno)-1)){
   # do per sample
   # are there more sites that could be cell type markers in the older vs younger
   # is hyper/hypo constant or erratic
-  modelOutput[[i]] <- pickCompProbesMatrix(rawbetas = trainBetas,
+  modelOutput[[i]] <- pickCompProbesMatrixRelaxed(rawbetas = trainBetas,
                                      cellTypes = unique(train$Cell_Type),
                                      cellInd = train$Cell_Type,
                                      numProbes = 100,
                                      probeSelect = "auto")
+  
+  print(nrow(modelOutput[[i]]$coefEsts))
   
   names(modelOutput)[[i]] <- paste0(test$Basename[1], "_", test$Basename[2])
 

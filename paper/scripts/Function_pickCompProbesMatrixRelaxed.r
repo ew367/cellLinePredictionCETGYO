@@ -1,6 +1,6 @@
 
 
-flexThresh <- 1e-1
+flexThresh <- 1e-5
 
 pickCompProbesMatrixRelaxed <- function(rawbetas, cellInd, cellTypes = NULL,
                                  numProbes = 50, probeSelect = "both") {
